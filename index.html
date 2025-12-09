@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>LIV – Lifetime Indicator & Visualizer</title>
+
+  <!-- Police pixel / terminal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "VT323", monospace;
+      background:
+        radial-gradient(circle at 0% 0%, #2f3f57 0, #0f1724 45%, #050814 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      min-height: 100vh;
+      padding: 40px 32px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* “bruit” léger */
+    .app-wrapper::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.20;
+      background-image:
+        url("https://transparenttextures.com/patterns/noisy-net.png");
+      mix-blend-mode: soft-light;
+    }
+
+    /* HEADER */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-title {
+      font-size: 56px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .top-right-label {
+      font-size: 18px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    /* STEPS WRAPPER */
+    .steps-container {
+      position: relative;
+      min-height: 60vh;
+      z-index: 1;
+    }
+
+    .step {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 40px;
+    }
+
+    .step.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .step-title {
+      font-size: 28px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .step-subtitle {
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      margin-bottom: 32px;
+    }
+
+    /* BOUTON PRINCIPAL */
+    .primary-button,
+    .secondary-button {
+      border-radius: 999px;
+      padding: 10px 30px;
+      font-family: "VT323", monospace;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 18px;
+      border: 1px solid #f5f5f5;
+      background: transparent;
+      color: #f5f5f5;
+      cursor: pointer;
+      transition: background 0.25s ease, color 0.25s ease, transform 0.1s;
+    }
+
+    .primary-button {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .primary-button:hover {
+      background: #f5f5f5;
+      color: #050814;
+      transform: translateY(-1px);
+    }
+
+    .secondary-button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .buttons-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* ARROWS */
+    .arrow-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 26px;
+      letter-spacing: 0.25em;
+      cursor: pointer;
+      color: #f5f5f5;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+      user-select: none;
+    }
+
+    .arrow-button:hover {
+      opacity: 1;
+    }
+
+    .arrow-left {
+      left: 18px;
+    }
+
+    .arrow-right {
+      right: 18px;
+    }
+
+    /* STEP 1 — LANDING */
+    .landing-title {
+      font-size: 52px;
+      letter-spacing: 0.16em;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .landing-sub {
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      opacity: 0.9;
+      margin-bottom: 40px;
+    }
+
+    .ghost-block {
+      width: 76px;
+      height: 10px;
+      margin: 0 auto;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      margin-top: 70px;
+      opacity: 0.6;
+    }
+
+    /* STEP 2 — ANALYSE (TEXTE) */
+    .analysis-wrapper {
+      width: 100%;
+      max-width: 820px;
+    }
+
+    .analysis-instruction {
+      font-size: 18px;
+      margin-bottom: 26px;
+      letter-spacing: 0.08em;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 170px;
+      padding: 16px 18px;
+      background: rgba(10, 16, 30, 0.72);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #f5f5f5;
+      font-family: "VT323", monospace;
+      font-size: 18px;
+      letter-spacing: 0.03em;
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea::placeholder {
+      color: rgba(245, 245, 245, 0.55);
+    }
+
+    textarea:focus {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
+    }
+
+    /* STEP 3 — RÉSULTAT */
+    .result-card {
+      width: 100%;
+      max-width: 820px;
+      padding: 30px 34px;
+      border-radius: 22px;
+      background: rgba(8, 12, 24, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      text-align: left;
+      margin-top: 20px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr;
+      row-gap: 10px;
+      column-gap: 24px;
+      font-size: 18px;
+      letter-spacing: 0.06em;
+    }
+
+    .result-label {
+      opacity: 0.8;
+    }
+
+    .result-value {
+      text-align: right;
+    }
+
+    .result-title {
+      font-size: 24px;
+      letter-spacing: 0.16em;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .result-sub {
+      font-size: 17px;
+      letter-spacing: 0.08em;
+      margin-bottom: 20px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    /* MINI GRILLE (VERSION SIMPLE) */
+    .mini-grid-wrapper {
+      margin-top: 26px;
+    }
+
+    .mini-grid-title {
+      font-size: 18px;
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .mini-bar {
+      height: 10px;
+      width: 100%;
+      max-width: 620px;
+      margin: 0 auto;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      display: flex;
+    }
+
+    .mini-bar-lived {
+      background: #f5f5f5;
+    }
+
+    .mini-bar-remaining {
+      background: transparent;
+    }
+
+    /* WARNING */
+    .warning {
+      margin-top: 12px;
+      color: #ffb3b3;
+      font-size: 16px;
+    }
+
+    /* FOOTER DISCLAIMER */
+    .footer-note {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 80%;
+      z-index: 1;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .app-wrapper {
+        padding: 24px 18px 40px;
+      }
+      .logo-title {
+        font-size: 40px;
+      }
+      .landing-title {
+        font-size: 38px;
+      }
+      .step {
+        padding: 0 12px;
+      }
+      .result-card {
+        padding: 22px 18px;
+      }
+      .result-grid {
+        grid-template-columns: 1.4fr 1fr;
+      }
+      .arrow-button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body data-has-result="{{ 'yes' if result else 'no' }}">
+
+<div class="app-wrapper">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="logo-title">LIV</div>
+    <div class="top-right-label">
+      {% if result %}
+        &gt; RÉSULTAT
+      {% else %}
+        Lifetime Indicator and Visualizer
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="steps-container">
+
+    <!-- STEP 1 : LANDING -->
+    <section class="step step-1 active">
+      <div class="landing-title">LIFETIME INDICATOR<br>AND VISUALIZER</div>
+      <div class="landing-sub">
+        Un prototype qui estime ton espérance de vie à partir d’un texte décrivant ta vie.
+        <br>Projet expérimental et purement statistique.
+      </div>
+
+      <button type="button" class="primary-button" onclick="goToStep(2)">
+        &gt; COMMENCEZ
+      </button>
+
+      <div class="ghost-block"></div>
+    </section>
+
+    <!-- STEP 2 : ANALYSE TEXTE -->
+    <section class="step step-2">
+      <div class="step-title">COMPLETE L’ANALYSE</div>
+      <div class="step-subtitle">
+        Modifie ce texte librement : âge, pays, habitudes de vie…
+      </div>
+
+      <div class="analysis-wrapper">
+        <form method="POST" id="lifeForm">
+          <textarea name="user_text" id="user_text" placeholder="Écris ici ton texte...">{{ input_text }}</textarea>
+
+          <div class="buttons-row">
+            <button
+              type="button"
+              class="secondary-button"
+              onclick="resetForm()"
+            >
+              RESET
+            </button>
+
+            <button
+              type="submit"
+              name="action"
+              value="predict"
+              class="primary-button"
+            >
+              PRÉDIRE
+            </button>
+          </div>
+        </form>
+
+        {% if warning %}
+          <div class="warning">{{ warning }}</div>
+        {% endif %}
+      </div>
+
+      <div class="arrow-button arrow-left" onclick="goToStep(1)">&lt;</div>
+      {% if result %}
+        <div class="arrow-button arrow-right" onclick="goToStep(3)">&gt;</div>
+      {% endif %}
+    </section>
+
+    <!-- STEP 3 : RÉSULTAT -->
+    <section class="step step-3">
+      {% if result %}
+        <div class="step-title">ESTIMATION D’ESPERANCE DE VIE</div>
+        <div class="step-subtitle">
+          L’analyse est terminée : LIV vous partage ses résultats.
+        </div>
+
+        <div class="analysis-wrapper">
+          <div class="result-card">
+            <div class="result-title">RAPPORT</div>
+            <div class="result-sub">
+              Calcul basé sur les données d’espérance de vie moyennes et le texte fourni.
+            </div>
+
+            <div class="result-grid">
+              <div class="result-label">Lieu détecté</div>
+              <div class="result-value">{{ result.location }}</div>
+
+              <div class="result-label">Année utilisée</div>
+              <div class="result-value">{{ result.year }}</div>
+
+              <div class="result-label">Espérance de vie moyenne</div>
+              <div class="result-value">
+                {{ "%.2f"|format(result.life_expectancy_years) }} ans
+              </div>
+
+              <div class="result-label">Âge détecté</div>
+              <div class="result-value">
+                {% if result.age %}
+                  {{ result.age }} ans
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+
+              <div class="result-label">Temps restant estimé</div>
+              <div class="result-value">
+                {% if result.remaining_years is not none %}
+                  {{ "%.2f"|format(result.remaining_years) }} ans
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+            </div>
+
+            {% if result.age and result.remaining_years is not none %}
+            <div class="mini-grid-wrapper">
+              <div class="mini-grid-title">Visualisation simplifiée (années vécues / années restantes)</div>
+              {% set total = result.life_expectancy_years if result.life_expectancy_years > 0 else 1 %}
+              {% set lived = (result.age / total) * 100 %}
+              {% set lived = 100 if lived > 100 else lived %}
+              <div class="mini-bar">
+                <div class="mini-bar-lived" style="width: {{ lived }}%;"></div>
+                <div class="mini-bar-remaining" style="width: {{ 100 - lived }}%;"></div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="buttons-row">
+            <button type="button" class="secondary-button" onclick="goToStep(2)">
+              &lt; RETOUR ANALYSE
+            </button>
+          </div>
+        </div>
+      {% else %}
+        <div class="step-title">AUCUNE ANALYSE ENCORE</div>
+        <div class="step-subtitle">
+          Commence par écrire un texte dans l’étape précédente.
+        </div>
+        <button type="button" class="primary-button" onclick="goToStep(2)">
+          &gt; ALLER À L’ANALYSE
+        </button>
+      {% endif %}
+
+      <div class="arrow-button arrow-left" onclick="goToStep(2)">&lt;</div>
+    </section>
+
+  </div>
+
+  <div class="footer-note">
+    Ce projet est expérimental et purement statistique. Aucune analyse médicale ou réelle du visage n’est effectuée.
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+
+  function showStep(n) {
+    const steps = document.querySelectorAll(".step");
+    steps.forEach((s, i) => {
+      s.classList.toggle("active", i === n - 1);
+    });
+    currentStep = n;
+  }
+
+  function goToStep(n) {
+    showStep(n);
+  }
+
+  function resetForm() {
+    const textarea = document.getElementById("user_text");
+    if (textarea) textarea.value = "";
+    window.location.href = "/";
+  }
+
+  // Au chargement : si on a un résultat, on va direct à la step 3
+  (function init() {
+    const hasResult = document.body.getAttribute("data-has-result");
+    if (hasResult === "yes") {
+      showStep(3);
+    } else {
+      showStep(1);
+    }
+  })();
+</script>
+
+</body>
+</html>
