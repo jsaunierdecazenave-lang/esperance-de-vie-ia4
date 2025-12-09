@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>LIV – Lifetime Indicator & Visualizer</title>
+
+  <!-- Police pixel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "VT323", monospace;
+      background: radial-gradient(circle at 0% 0%, #2f3f57 0, #0f1724 45%, #050814 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      min-height: 100vh;
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app-wrapper::before {
+      content:"";
+      position: fixed;
+      inset: 0;
+      background-image: url("https://transparenttextures.com/patterns/noisy-net.png");
+      opacity: 0.25;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+    }
+
+    /* HEADER */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      font-size: 40px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .subheader {
+      font-size: 18px;
+      opacity: 0.8;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* STEPS */
+    .step {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      transition: opacity 0.4s ease;
+    }
+    .step.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .landing-title {
+      font-size: 52px;
+      letter-spacing: 0.16em;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .landing-sub {
+      font-size: 20px;
+      opacity: 0.9;
+      margin-bottom: 30px;
+    }
+
+    /* Buttons */
+    .primary-button, .secondary-button {
+      padding: 12px 32px;
+      font-size: 20px;
+      font-family: "VT323";
+      background: transparent;
+      color: #f5f5f5;
+      border: 1px solid #fff;
+      border-radius: 999px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      transition: 0.25s;
+    }
+    .primary-button:hover {
+      background: #fff;
+      color: #050814;
+    }
+    .secondary-button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .buttons-row {
+      margin-top: 20px;
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    /* Step 2: Text Area */
+    textarea {
+      width: 85%;
+      height: 180px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(10,15,30,0.7);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      font-size: 20px;
+      letter-spacing: 0.05em;
+      resize: vertical;
+      outline: none;
+      transition: 0.3s;
+    }
+    textarea:focus {
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+
+    /* Result Card */
+    .result-card {
+      width: 85%;
+      padding: 30px;
+      border-radius: 20px;
+      background: rgba(12,20,40,0.6);
+      border: 1px solid rgba(255,255,255,0.4);
+      text-align: left;
+    }
+
+    .result-title {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 12px;
+      font-size: 20px;
+    }
+
+    .mini-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 20px;
+      display: flex;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+    .mini-bar-lived { background: #fff; }
+    .mini-bar-remaining { background: transparent; }
+
+    /* Footer */
+    .footer-note {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.7;
+      letter-spacing: 0.1em;
+    }
+
+  </style>
+</head>
+
+<body data-has-result="{{ 'yes' if result else 'no' }}">
+<div class="app-wrapper">
+
+  <div class="top-bar">
+    <div>LIV</div>
+    <div class="subheader">
+      {% if result %}&gt; Résultat{% else %}Lifetime Indicator & Visualizer{% endif %}
+    </div>
+  </div>
+
+  <!-- Step 1 -->
+  <section class="step step-1 active">
+    <div class="landing-title">Lifetime Indicator<br>and Visualizer</div>
+    <div class="landing-sub">
+      Prototype expérimental basé sur ton texte.
+    </div>
+    <button class="primary-button" onclick="goToStep(2)">&gt; Commencez</button>
+  </section>
+
+  <!-- Step 2 -->
+  <section class="step step-2">
+    <h2 style="font-size:28px; margin-bottom:10px;">Analyse</h2>
+    <p style="opacity:0.8; margin-bottom:20px;">Décris ton âge, ton pays, ta vie...</p>
+
+    <form method="POST" id="lifeForm">
+      <textarea name="user_text" id="user_text" placeholder="Écris ici...">{{ input_text }}</textarea>
+
+      <div class="buttons-row">
+        <button type="button" class="secondary-button" onclick="resetForm()">Reset</button>
+        <button type="submit" name="action" value="predict" class="primary-button">Prédire</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Step 3 -->
+  <section class="step step-3">
+    {% if result %}
+    <div class="result-card">
+      <div class="result-title">Résultat</div>
+
+      <div class="result-grid">
+        <div>Lieu détecté</div><div>{{ result.location }}</div>
+        <div>Année utilisée</div><div>{{ result.year }}</div>
+        <div>Espérance de vie</div><div>{{ "%.2f"|format(result.life_expectancy_years) }} ans</div>
+        <div>Âge détecté</div><div>{{ result.age if result.age else "—" }}</div>
+        <div>Temps restant</div>
+        <div>
+          {% if result.remaining_years is not none %}
+            {{ "%.2f"|format(result.remaining_years) }} ans
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+
+      {% if result.age %}
+      <div class="mini-bar">
+        {% set total = result.life_expectancy_years %}
+        {% set lived = (result.age / total) * 100 %}
+        <div class="mini-bar-lived" style="width:{{ lived }}%"></div>
+        <div class="mini-bar-remaining" style="width:{{ 100-lived }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="buttons-row" style="margin-top:20px;">
+      <button class="secondary-button" onclick="goToStep(2)">&lt; Retour</button>
+    </div>
+
+    {% else %}
+    <p>Aucun résultat encore.</p>
+    <button class="primary-button" onclick="goToStep(2)">Analyse</button>
+    {% endif %}
+  </section>
+
+  <div class="footer-note">Projet expérimental, non médical.</div>
+
+</div>
+
+<script>
+  let currentStep = 1;
+
+  function showStep(n) {
+    document.querySelectorAll(".step").forEach((step, i) => {
+      step.classList.toggle("active", i === n - 1);
+    });
+    currentStep = n;
+  }
+
+  function goToStep(n) { showStep(n); }
+
+  function resetForm() {
+    document.getElementById("user_text").value = "";
+    window.location.href = "/";
+  }
+
+  // Show step 3 automatically if result exists
+  (function () {
+    const hasResult = document.body.dataset.hasResult;
+    if (hasResult === "yes") showStep(3);
+    else showStep(1);
+  })();
+</script>
+
+</body>
+</html>
